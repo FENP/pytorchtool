@@ -1,0 +1,151 @@
+# coding=utf-8
+import sys
+import time
+import torch
+import pandas as pd
+import functools
+from collections import OrderedDict, defaultdict, namedtuple
+
+#import torch.autograd.profiler as torch_profiler
+
+# name:模块名；module:模块
+Trace = namedtuple("Trace", ["name", "module"])
+
+
+def walk_modules(module, name="", depth=-1):
+    """生成器。根据depth遍历pytorch模块，生成Trace元组"""
+
+    child_list = list(module.named_children())
+    '''
+    遍历到叶子结点或depth指定的深度时返回当前模块元组；
+    否则继续向下遍历
+    '''
+    if depth == 0 or len(child_list) == 0:
+        yield Trace(name, module)
+    else:
+        for child in child_list:
+            yield from walk_modules(child[1], child[0] if name=="" else name + "." + child[0], depth - 1)
+
+
+class Profile(object):
+    """PyTorch模型的逐层分析器，可以获取模型各层初始化、执行时间和输出数据大小"""
+
+    def __init__(self, model, weightPath, enabled=True, use_cuda=False, depth=-1):
+        self._model = model
+        self.enabled = enabled
+        self.use_cuda = use_cuda
+        self.depth = depth
+        
+        # 读取模型权重文件
+        # self.state_dict_read = torch.load(weightPath)
+
+        self.entered = False
+        self.exited = False
+        self.traces = ()
+        #self.trace_profile_events = defaultdict(list)
+        self.information = defaultdict(list)
+
+    def __enter__(self):
+        if not self.enabled:
+            return self
+        if self.entered:
+            raise RuntimeError("mytorch tool profiler is not reentrant")
+        self.entered = True
+        self._forwards = {}  # 存储初始forwards
+
+        # 逐层初始化分析
+        self.traces = tuple(map(self._load_weight, walk_modules(self._model, depth=self.depth)))
+        # 逐层修改forwards
+        tuple(map(self._hook_trace, self.traces))
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.enabled:
+            return
+        # 逐层恢复初始forwards
+        tuple(map(self._remove_hook_trace, self.traces))
+        del self._forwards  # remove unnecessary forwards
+        self.exited = True
+
+    def __str__(self):
+        return str(pd.DataFrame.from_dict(self.information, orient='index', 
+            columns=['Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)']))
+
+    def __call__(self, *args, **kwargs):
+        return self._model(*args, **kwargs)
+
+    def _load_weight(self, trace):
+        [name, module] = trace
+        
+        start = time.time()
+        module.load_state_dict(torch.load("./model_weight/" + 
+            self._model.__class__.__name__ + "/" + name + ".pth"), strict=False)
+        '''
+        layer_dict = {}
+        for k,v in self.state_dict_read.items():
+            if(k.startswith(name)):
+                layer_dict.update({k:v})
+        
+        if layer_dict:
+            self._model.load_state_dict(layer_dict, strict=False)
+            loadingTime = (time.time() - start) * 1000
+            self.information[name].append(loadingTime)
+        else:
+            self.information[name].append(0)
+        '''
+        loadingTime = (time.time() - start) * 1000
+        self.information[name].append(loadingTime)
+        return trace
+
+    def _hook_trace(self, trace):
+        [name, module] = trace
+        _forward = module.forward
+        self._forwards[name] = _forward
+
+        @functools.wraps(_forward)
+        def wrap_forward(*args, **kwargs):
+            '''
+            with torch_profiler.profile(use_cuda=self.use_cuda) as prof:
+                res = _forward(*args, **kwargs)
+
+            event_list = prof.function_events
+            event_list.populate_cpu_children()
+            # each profile call should be contained in its own list
+            self.trace_profile_events[name].append(event_list)
+            '''
+            # 执行时间
+            if self.use_cuda:
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                
+                start.record()
+                output = _forward(*args, **kwargs)
+                end.record()
+    
+                # 等待执行完成
+                torch.cuda.synchronize()
+                
+                exec_time = start.elapsed_time(end)
+            else:
+                start = time.time()
+                output = _forward(*args, **kwargs)
+                exec_time = (time.time() - start) * 1000
+            
+            # 输出数据大小
+            data_size = sys.getsizeof(output.storage()) / 1024 / 1024
+            
+            self.information[name].append(data_size)
+            self.information[name].append(exec_time)
+            return output
+
+        module.forward = wrap_forward
+        return trace
+
+    def _remove_hook_trace(self, trace):
+        [name, module] = trace
+        module.forward = self._forwards[name]
+
+    def printCsv(self, filePath='./parameters/default.csv'):
+        df = pd.DataFrame.from_dict(self.information, orient='index', 
+            columns=['Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)'])
+        df.to_csv(filePath)
