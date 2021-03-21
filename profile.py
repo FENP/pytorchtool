@@ -6,8 +6,6 @@ import pandas as pd
 import functools
 from collections import OrderedDict, defaultdict, namedtuple
 
-#import torch.autograd.profiler as torch_profiler
-
 # name:模块名；module:模块
 Trace = namedtuple("Trace", ["name", "module"])
 
@@ -36,13 +34,10 @@ class Profile(object):
         self.use_cuda = use_cuda
         self.depth = depth
         
-        # 读取模型权重文件
-        # self.state_dict_read = torch.load(weightPath)
 
         self.entered = False
         self.exited = False
         self.traces = ()
-        #self.trace_profile_events = defaultdict(list)
         self.information = defaultdict(list)
 
     def __enter__(self):
@@ -80,19 +75,6 @@ class Profile(object):
         start = time.time()
         module.load_state_dict(torch.load("./model_weight/" + 
             self._model.__class__.__name__ + "/" + name + ".pth"), strict=False)
-        '''
-        layer_dict = {}
-        for k,v in self.state_dict_read.items():
-            if(k.startswith(name)):
-                layer_dict.update({k:v})
-        
-        if layer_dict:
-            self._model.load_state_dict(layer_dict, strict=False)
-            loadingTime = (time.time() - start) * 1000
-            self.information[name].append(loadingTime)
-        else:
-            self.information[name].append(0)
-        '''
         loadingTime = (time.time() - start) * 1000
         self.information[name].append(loadingTime)
         return trace
@@ -104,15 +86,6 @@ class Profile(object):
 
         @functools.wraps(_forward)
         def wrap_forward(*args, **kwargs):
-            '''
-            with torch_profiler.profile(use_cuda=self.use_cuda) as prof:
-                res = _forward(*args, **kwargs)
-
-            event_list = prof.function_events
-            event_list.populate_cpu_children()
-            # each profile call should be contained in its own list
-            self.trace_profile_events[name].append(event_list)
-            '''
             # 执行时间
             if self.use_cuda:
                 start = torch.cuda.Event(enable_timing=True)
@@ -131,7 +104,7 @@ class Profile(object):
                 output = _forward(*args, **kwargs)
                 exec_time = (time.time() - start) * 1000
             
-            # 输出数据大小
+            # 输出数据大小（MB）
             data_size = sys.getsizeof(output.storage()) / 1024 / 1024
             
             self.information[name].append(data_size)
