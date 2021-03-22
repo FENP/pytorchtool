@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import torch
-import pytorchtool
+import pytorch-tool
 import numpy as np
 
 from classes import class_names
@@ -69,7 +69,7 @@ class model:
         return self.x
     
     def save_layers(self, depth=-1):
-        pytorchtool.save_model(self.model, depth=depth)
+        pytorch-tool.save_model(self.model, depth=depth)
     
     def inference(self):
         with torch.no_grad():
@@ -78,7 +78,7 @@ class model:
         print("result: " + class_names[torch.argmax(outputs, 1)[0]])
 
     def prof(self, depth=-1):
-        with mytorchtool.Profile(self.model, weightPath=self.path, 
+        with pytorch-tool.Profile(self.model, weightPath=self.path, 
                                  use_cuda=self.use_gpu, depth=depth) as prof:
             self.model(self.x)
 
