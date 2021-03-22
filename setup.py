@@ -5,9 +5,8 @@ import torch
 path = "./model_weight"
 dir_name = "default"
 
-"""根据depth遍历pytorch模块，保存模块的权重文件
-"""
 def save_weight_by_layer(module, name="", depth=-1):
+    """根据depth遍历pytorch模块，保存模块的权重文件"""
 
     child_list = list(module.named_children())
     '''
@@ -20,12 +19,12 @@ def save_weight_by_layer(module, name="", depth=-1):
         for child in child_list:
             save_weight_by_layer(child[1], child[0] if name=="" else name + "." + child[0], depth - 1)
 
-'''分别保存模型各层权重到'$path/模型名/'目录下
-参数：
-    model: pytorch模型（已加载权重）
-    depth: 模型层嵌套深度（-1表示全部展开）
-'''
 def save_model(model, depth=-1):
+    '''分别保存模型各层权重到'$path/模型名/'目录下
+    参数：
+        model: pytorch模型（已加载权重）
+        depth: 模型层嵌套深度（-1表示全部展开）
+    '''
     global dir_name
     dir_name = model.__class__.__name__
     save_weight_by_layer(model, name="", depth=depth)

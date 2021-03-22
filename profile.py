@@ -9,9 +9,9 @@ from collections import defaultdict, namedtuple
 # name:模块名；module:模块
 Trace = namedtuple("Trace", ["name", "module"])
 
-"""生成器。根据depth遍历pytorch模块，生成Trace元组"""
 def walk_modules(module, name="", depth=-1):
-
+    """生成器。根据depth遍历pytorch模块，生成Trace元组"""
+    
     child_list = list(module.named_children())
     '''
     遍历到叶子结点或depth指定的深度时返回当前模块元组；
@@ -23,17 +23,17 @@ def walk_modules(module, name="", depth=-1):
         for child in child_list:
             yield from walk_modules(child[1], child[0] if name=="" else name + "." + child[0], depth - 1)
 
-"""PyTorch模型的逐层分析器，可以获取模型各层初始化、执行时间和输出数据大小"""
 class Profile(object):
+    """PyTorch模型的逐层分析器，可以获取模型各层初始化、执行时间和输出数据大小"""
 
-    """
-    参数：
-        model：pytorch模型
-        enabled：是否（True/False）启用分析
-        use_cuda：是否（True/False）使用GPU
-        depth：模型层嵌套深度
-    """
     def __init__(self, model, enabled=True, use_cuda=False, depth=-1):
+        """
+        参数：
+            model：pytorch模型
+            enabled：是否（True/False）启用分析
+            use_cuda：是否（True/False）使用GPU
+            depth：模型层嵌套深度
+        """
         self._model = model
         self.enabled = enabled
         self.use_cuda = use_cuda
@@ -107,6 +107,7 @@ class Profile(object):
             else:
                 start = time.time()
                 output = _forward(*args, **kwargs)
+                # 转换为ms
                 exec_time = (time.time() - start) * 1000
             
             # 输出数据大小（MB）
@@ -123,11 +124,11 @@ class Profile(object):
         [name, module] = trace
         module.forward = self._forwards[name]
 
-    """将模型分析结果写入csv文件
-    参数：
-        filePath：csv文件路径及文件名
-    """
     def printCsv(self, filePath='./parameters/default.csv'):
+        """将模型分析结果写入csv文件
+        参数：
+            filePath：csv文件路径及文件名
+        """
         df = pd.DataFrame.from_dict(self.information, orient='index', 
             columns=['Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)'])
         df.to_csv(filePath)
