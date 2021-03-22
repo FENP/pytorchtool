@@ -1,5 +1,5 @@
-from mytorchtool.profile import Profile
-from mytorchtool.setup import save_model
+from pytorch-tool.profile import Profile
+from pytorch-tool.setup import save_model
 
 name = "pytorch-tool"
 
