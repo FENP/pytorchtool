@@ -4,14 +4,13 @@ import time
 import torch
 import pandas as pd
 import functools
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 
 # name:模块名；module:模块
 Trace = namedtuple("Trace", ["name", "module"])
 
-
+"""生成器。根据depth遍历pytorch模块，生成Trace元组"""
 def walk_modules(module, name="", depth=-1):
-    """生成器。根据depth遍历pytorch模块，生成Trace元组"""
 
     child_list = list(module.named_children())
     '''
@@ -24,11 +23,17 @@ def walk_modules(module, name="", depth=-1):
         for child in child_list:
             yield from walk_modules(child[1], child[0] if name=="" else name + "." + child[0], depth - 1)
 
-
+"""PyTorch模型的逐层分析器，可以获取模型各层初始化、执行时间和输出数据大小"""
 class Profile(object):
-    """PyTorch模型的逐层分析器，可以获取模型各层初始化、执行时间和输出数据大小"""
 
-    def __init__(self, model, weightPath, enabled=True, use_cuda=False, depth=-1):
+    """
+    参数：
+        model：pytorch模型
+        enabled：是否（True/False）启用分析
+        use_cuda：是否（True/False）使用GPU
+        depth：模型层嵌套深度
+    """
+    def __init__(self, model, enabled=True, use_cuda=False, depth=-1):
         self._model = model
         self.enabled = enabled
         self.use_cuda = use_cuda
@@ -44,7 +49,7 @@ class Profile(object):
         if not self.enabled:
             return self
         if self.entered:
-            raise RuntimeError("mytorch tool profiler is not reentrant")
+            raise RuntimeError("pytorch-tool profiler is not reentrant")
         self.entered = True
         self._forwards = {}  # 存储初始forwards
 
@@ -118,6 +123,10 @@ class Profile(object):
         [name, module] = trace
         module.forward = self._forwards[name]
 
+    """将模型分析结果写入csv文件
+    参数：
+        filePath：csv文件路径及文件名
+    """
     def printCsv(self, filePath='./parameters/default.csv'):
         df = pd.DataFrame.from_dict(self.information, orient='index', 
             columns=['Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)'])
