@@ -1,8 +1,9 @@
 import os
 import sys
+sys.path.append('..')
 import time
 import torch
-import pytorch-tool
+import pytorchtool
 import numpy as np
 
 from classes import class_names
@@ -10,7 +11,7 @@ from classes import class_names
 from PIL import Image
 from torchvision import models, transforms
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def process_img(path_img):
     # hard code
@@ -69,7 +70,7 @@ class model:
         return self.x
     
     def save_layers(self, depth=-1):
-        pytorch-tool.save_model(self.model, depth=depth)
+        pytorchtool.save_model(self.model, depth=depth)
     
     def inference(self):
         with torch.no_grad():
@@ -78,8 +79,8 @@ class model:
         print("result: " + class_names[torch.argmax(outputs, 1)[0]])
 
     def prof(self, depth=-1):
-        with pytorch-tool.Profile(self.model, weightPath=self.path, 
-                                 use_cuda=self.use_gpu, depth=depth) as prof:
+        with pytorchtool.Profile(self.model, use_cuda=self.use_gpu, 
+                depth=depth) as prof:
             self.model(self.x)
 
         if self.use_gpu:
@@ -91,6 +92,7 @@ class model:
 if __name__ == "__main__":
     name = "alex"
     m = model(name)
-    # m.prof(depth=-1)
-    m.load_weight()
-    m.save_layers(depth=-1)
+    m.prof(depth=-1)
+    m.inference()
+    #m.load_weight()
+    #m.save_layers(depth=-1)
