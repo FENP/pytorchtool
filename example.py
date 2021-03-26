@@ -83,16 +83,23 @@ class model:
                 depth=depth) as prof:
             self.model(self.x)
 
+        if not os.path.exists("./parameters/" + self.model_name):
+            os.makedirs("./parameters/" + self.model_name)
+
         if self.use_gpu:
-            prof.printCsv("./parameters/" + self.model_name + "GPU.csv")
+            prof.printCsv("./parameters/" + self.model_name + "/GPU.csv")
         else:
-            prof.printCsv("./parameters/" + self.model_name + "CPU.csv")
+            prof.printCsv("./parameters/" + self.model_name + "/CPU.csv")
 
 
 if __name__ == "__main__":
     name = "alex"
     m = model(name)
-    m.prof(depth=-1)
-    m.inference()
-    #m.load_weight()
-    #m.save_layers(depth=-1)
+
+    prepare = False
+    if prepare:
+        m.load_weight()
+        m.save_layers(depth=-1)
+    else:
+        m.prof(depth=-1)
+        m.inference()

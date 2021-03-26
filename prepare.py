@@ -27,4 +27,8 @@ def save_model(model, depth=-1):
     '''
     global dir_name
     dir_name = model.__class__.__name__
+
+    if not os.path.exists(os.path.join(path, dir_name)):
+        os.makedirs(os.path.join(path, dir_name))
+    
     save_weight_by_layer(model, name="", depth=depth)
