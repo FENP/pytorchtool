@@ -42,21 +42,25 @@ class Surgery(object):
         self._forwards = {}
 
         # 存储中间层输出
-        self._middleResult = defaultdict(list)
+        self._middleResult = {}
 
         # 逐层修改forwards
         self.traces = tuple(map(self._hook_trace, walk_modules(self._model, depth=self._depth)))
-        return self
+
+    def recover(self):
+        # 逐层恢复初始forwards
+        tuple(map(self._remove_hook_trace, self.traces))
+        del self._forwards  # remove unnecessary forwards
 
     def getMiddleResult(self):
         return self._middleResult
 
     def setMiddleResult(self, middleResult):
-        if mode == 2:
+        if self._mode == 2:
             self._middleResult = middleResult
 
     def clearMiddleResult(self):
-        if mode == 0:
+        if self._mode == 0:
             self._middleResult.clear()
 
     def setLayerState(self, layerState):
@@ -72,20 +76,27 @@ class Surgery(object):
 
         @functools.wraps(_forward)
         def wrap_forward(*args, **kwargs):
-            if self._layerState[name] != mode:
+            if self._layerState[name] != self._mode:
                 # 非中间输出层直接返回原始数据
                 if self._layerState[name] != 1:
+                    # print("skip ", name)
                     return args[0]
                 # 服务端模式获取层输出并返回
-                else if mode == 2:
+                elif self._mode == 2:
+                    # print("middle ", name)
                     return self._middleResult[name]
-
+            # print("execute ", name)
             output = _forward(*args, **kwargs)
             
             # 客户端模型下需要存储中间层输出
-            if mode == 0 and self._layerState[name] == 1:
+            if self._mode == 0 and self._layerState[name] == 1:
+                # print("save", name)
                 self._middleResult[name] = output
             return output
 
         module.forward = wrap_forward
         return trace
+    
+    def _remove_hook_trace(self, trace):
+        [name, module] = trace
+        module.forward = self._forwards[name]

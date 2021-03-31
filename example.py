@@ -75,7 +75,6 @@ class model:
     def inference(self):
         with torch.no_grad():
             outputs = self.model(self.x)
-
         print("result: " + class_names[torch.argmax(outputs, 1)[0]])
 
     def prof(self, depth=-1):
@@ -95,11 +94,46 @@ class model:
 if __name__ == "__main__":
     name = "alex"
     m = model(name)
+    m.load_weight()
 
-    prepare = False
-    if prepare:
-        m.load_weight()
+    doPrepare = False
+    doProf = False
+    doInference = True
+    doPartition = True
+
+    if doPrepare:
         m.save_layers(depth=-1)
-    else:
+    elif doProf:
         m.prof(depth=-1)
+    elif doInference:
         m.inference()
+    elif doPartition:
+        '''
+        使用Alexnet进行了切分测试
+        '''
+        cModel = pytorchtool.Surgery(m.model, 0)
+        cModel.setLayerState({"features.0": 0, "features.1": 0, "features.2": 0, "features.3": 0,
+                            "features.4": 0, "features.5": 0, "features.6": 0, "features.7": 0,
+                            "features.8": 0, "features.9": 0, "features.10": 0, "features.11": 0,
+                            "features.12": 0, "avgpool": 0, "classifier.0": 1, "classifier.1": 2,
+                            "classifier.2": 2, "classifier.3": 2, "classifier.4": 2, "classifier.5": 2,
+                            "classifier.6": 2})
+        cModel.clearMiddleResult()
+        cModel(m.x)
+        cModel.recover() # 恢复m的forward函数，避免sModel对同一个模型嵌套修改
+        print(cModel.getMiddleResult())
+
+        sModel = pytorchtool.Surgery(m.model, 2)
+        sModel.setLayerState({"features.0": 0, "features.1": 0, "features.2": 0, "features.3": 0,
+                            "features.4": 0, "features.5": 0, "features.6": 0, "features.7": 0,
+                            "features.8": 0, "features.9": 0, "features.10": 0, "features.11": 0,
+                            "features.12": 0, "avgpool": 0, "classifier.0": 1, "classifier.1": 2,
+                            "classifier.2": 2, "classifier.3": 2, "classifier.4": 2, "classifier.5": 2,
+                            "classifier.6": 2})
+        '''
+        这里使用随机生成的相同size的数据代替原始输入数据，
+        实际使用时若将计算全部卸载到了服务端，则需要传入原始数据
+        '''
+        sModel.setMiddleResult(cModel.getMiddleResult())
+        outputs = sModel(torch.rand(224, 224).unsqueeze_(0))
+        print("result: " + class_names[torch.argmax(outputs, 1)[0]])
