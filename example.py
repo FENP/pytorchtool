@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     doPrepare = False
     doProf = False
-    doInference = True
+    doInference = False
     doPartition = True
 
     if doPrepare:
@@ -112,10 +112,10 @@ if __name__ == "__main__":
         使用Alexnet进行了切分测试
         '''
         cModel = pytorchtool.Surgery(m.model, 0)
-        cModel.setLayerState({"features.0": 0, "features.1": 0, "features.2": 0, "features.3": 0,
-                            "features.4": 0, "features.5": 0, "features.6": 0, "features.7": 0,
-                            "features.8": 0, "features.9": 0, "features.10": 0, "features.11": 0,
-                            "features.12": 0, "avgpool": 0, "classifier.0": 1, "classifier.1": 2,
+        cModel.setLayerState({"input": 1, "features.0": 2, "features.1": 2, "features.2": 2, "features.3": 2,
+                            "features.4": 2, "features.5": 2, "features.6": 2, "features.7": 2,
+                            "features.8": 2, "features.9": 2, "features.10": 2, "features.11": 2,
+                            "features.12": 2, "avgpool": 2, "classifier.0": 2, "classifier.1": 2,
                             "classifier.2": 2, "classifier.3": 2, "classifier.4": 2, "classifier.5": 2,
                             "classifier.6": 2})
         cModel.clearMiddleResult()
@@ -124,10 +124,10 @@ if __name__ == "__main__":
         print(cModel.getMiddleResult())
 
         sModel = pytorchtool.Surgery(m.model, 2)
-        sModel.setLayerState({"features.0": 0, "features.1": 0, "features.2": 0, "features.3": 0,
-                            "features.4": 0, "features.5": 0, "features.6": 0, "features.7": 0,
-                            "features.8": 0, "features.9": 0, "features.10": 0, "features.11": 0,
-                            "features.12": 0, "avgpool": 0, "classifier.0": 1, "classifier.1": 2,
+        sModel.setLayerState({"input": 1, "features.0": 2, "features.1": 2, "features.2": 2, "features.3": 2,
+                            "features.4": 2, "features.5": 2, "features.6": 2, "features.7": 2,
+                            "features.8": 2, "features.9": 2, "features.10": 2, "features.11": 2,
+                            "features.12": 2, "avgpool": 2, "classifier.0": 2, "classifier.1": 2,
                             "classifier.2": 2, "classifier.3": 2, "classifier.4": 2, "classifier.5": 2,
                             "classifier.6": 2})
         '''

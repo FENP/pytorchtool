@@ -67,6 +67,14 @@ class Surgery(object):
         self._layerState = layerState
 
     def __call__(self, *args, **kwargs):
+        # 针对客户端或服务端完成全部计算的清空做特殊处理
+        if self._layerState['input'] == 1:
+            if self._mode == 0:
+                self._middleResult['input'] = args[0]
+                return torch.rand(1,1000)
+            elif self._mode == 2:
+                return self._model((self._middleResult['input']))
+        
         return self._model(*args, **kwargs)
 
     def _hook_trace(self, trace):
