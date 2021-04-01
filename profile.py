@@ -45,11 +45,14 @@ class Profile(object):
         self.traces = ()
         self.information = defaultdict(list)
 
+        # 输入层信息（默认输入数据size为3*224*224，float32）
+        self.information["input"].extend([0, (3*224*224) * 4 / 1024 / 1024, 0])
+
     def __enter__(self):
         if not self.enabled:
             return self
         if self.entered:
-            raise RuntimeError("pytorch-tool profiler is not reentrant")
+            raise RuntimeError("pytorchtool profiler is not reentrant")
         self.entered = True
         self._forwards = {}  # 存储初始forwards
 
