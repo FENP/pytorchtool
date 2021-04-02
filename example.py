@@ -92,12 +92,12 @@ class model:
 
 
 if __name__ == "__main__":
-    name = "alex"
+    name = "in"
     m = model(name)
     m.load_weight()
 
     doPrepare = False
-    doProf = False
+    doProf = True
     doInference = False
     doPartition = True
 

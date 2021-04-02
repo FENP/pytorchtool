@@ -70,9 +70,11 @@ class Surgery(object):
         # 针对客户端或服务端完成全部计算的清空做特殊处理
         if self._layerState['input'] == 1:
             if self._mode == 0:
+                # print("客户端传输原始输入")
                 self._middleResult['input'] = args[0]
                 return torch.rand(1,1000)
             elif self._mode == 2:
+                # print("服务端接收原始输入")
                 return self._model((self._middleResult['input']))
         
         return self._model(*args, **kwargs)
