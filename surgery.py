@@ -1,6 +1,7 @@
 # coding=utf-8
 import sys
 import torch
+import logging
 import functools
 from collections import defaultdict, namedtuple
 
@@ -70,11 +71,11 @@ class Surgery(object):
         # 针对客户端或服务端完成全部计算的清空做特殊处理
         if self._layerState['input'] == 1:
             if self._mode == 0:
-                # print("客户端传输原始输入")
+                logging.info("客户端传输原始输入")
                 self._middleResult['input'] = args[0]
                 return torch.rand(1,1000)
             elif self._mode == 2:
-                # print("服务端接收原始输入")
+                logging.info("服务端接收原始输入")
                 return self._model((self._middleResult['input']))
         
         return self._model(*args, **kwargs)
@@ -89,18 +90,18 @@ class Surgery(object):
             if self._layerState[name] != self._mode:
                 # 非中间输出层直接返回原始数据
                 if self._layerState[name] != 1:
-                    # print("skip ", name)
+                    logging.debug("skip ", name)
                     return args[0]
                 # 服务端模式获取层输出并返回
                 elif self._mode == 2:
-                    # print("middle ", name)
+                    logging.debug("middle ", name)
                     return self._middleResult[name]
-            # print("execute ", name)
+            logging.debug("execute ", name)
             output = _forward(*args, **kwargs)
             
             # 客户端模型下需要存储中间层输出
             if self._mode == 0 and self._layerState[name] == 1:
-                # print("save", name)
+                logging.debug("save ", name)
                 self._middleResult[name] = output
             return output
 
