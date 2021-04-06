@@ -90,18 +90,18 @@ class Surgery(object):
             if self._layerState[name] != self._mode:
                 # 非中间输出层直接返回原始数据
                 if self._layerState[name] != 1:
-                    logging.debug("skip ", name)
+                    logging.debug("skip %s", name)
                     return args[0]
                 # 服务端模式获取层输出并返回
                 elif self._mode == 2:
-                    logging.debug("middle ", name)
+                    logging.debug("middle %s", name)
                     return self._middleResult[name]
-            logging.debug("execute ", name)
+            logging.debug("execute %s", name)
             output = _forward(*args, **kwargs)
             
             # 客户端模型下需要存储中间层输出
             if self._mode == 0 and self._layerState[name] == 1:
-                logging.debug("save ", name)
+                logging.debug("save %s", name)
                 self._middleResult[name] = output
             return output
 
