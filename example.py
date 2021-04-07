@@ -97,7 +97,7 @@ if __name__ == "__main__":
     m.load_weight()
 
     doPrepare = False
-    doProf = False
+    doProf = True
     doInference = False
     doPartition = True
 

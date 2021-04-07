@@ -3,25 +3,9 @@ import sys
 import torch
 import logging
 import functools
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 
-# name:模块名；module:模块
-Trace = namedtuple("Trace", ["name", "module"])
-
-def walk_modules(module, name="", depth=-1):
-    """生成器。根据depth遍历pytorch模块，生成Trace元组"""
-
-    child_list = list(module.named_children())
-    '''
-    遍历到叶子结点或depth指定的深度时返回当前模块元组；
-    否则继续向下遍历
-    '''
-    if depth == 0 or len(child_list) == 0:
-        yield Trace(name, module)
-    else:
-        for child in child_list:
-            yield from walk_modules(child[1], child[0] if name=="" else name + "." + child[0], depth - 1)
-
+from .walk import walk_modules
 
 class Surgery(object):
     """对PyTorch模型进行处理，方便进行模型切分"""
@@ -81,7 +65,7 @@ class Surgery(object):
         return self._model(*args, **kwargs)
 
     def _hook_trace(self, trace):
-        [name, module] = trace
+        (name, module) = trace
         _forward = module.forward
         self._forwards[name] = _forward
 
@@ -109,5 +93,5 @@ class Surgery(object):
         return trace
     
     def _remove_hook_trace(self, trace):
-        [name, module] = trace
+        (name, module) = trace
         module.forward = self._forwards[name]
