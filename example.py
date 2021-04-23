@@ -44,13 +44,15 @@ class model:
                                     init_weights=False)
             model.eval()
             self.model = model
+            self.depth = 1
         elif self.model_name in 'alexnet':
             self.model_name = 'alexnet'
             self.path = "./model_weight/alexnet/alexnet-owt-4df8aa71.pth"
             
             model = models.alexnet(False)
             model.eval()
-            self.model = model 
+            self.model = model
+            self.depth = -1 
         else:
             print("Wrong model name")
 
@@ -86,50 +88,56 @@ class model:
             os.makedirs("./parameters/" + self.model_name)
 
         if self.use_gpu:
-            prof.printCsv("./parameters/" + self.model_name + "/GPU.csv")
+            prof.printCsv("./parameters/" + self.model_name + "/gpuPart.csv")
         else:
-            prof.printCsv("./parameters/" + self.model_name + "/CPU.csv")
+            prof.printCsv("./parameters/" + self.model_name + "/cpuPart.csv")
 
 
 if __name__ == "__main__":
-    name = "alex"
+    name = "in"
+    start_init = time.time()
     m = model(name)
+    print("模型结构初始化时间: ", time.time() - start_init)
+    start_load = time.time()
     m.load_weight()
+    print("模型参数加载时间: ", time.time() - start_load)
 
     doPrepare = False
     doProf = True
-    doInference = False
+    doInference = True
     doPartition = True
 
     if doPrepare:
-        m.save_layers(depth=-1)
+        m.save_layers(depth=m.depth)
     elif doProf:
-        m.prof(depth=-1)
+        m.prof(depth=m.depth)
     elif doInference:
+        start = time.time()
         m.inference()
+        print("推理时间", time.time() - start)
     elif doPartition:
         '''
         使用Alexnet进行了切分测试
         '''
-        cModel = pytorchtool.Surgery(m.model, 0)
+        cModel = pytorchtool.Surgery(m.model, 0, depth=m.depth)
         cModel.setLayerState({"input": 1, "features.0": 2, "features.1": 2, "features.2": 2, "features.3": 2,
                             "features.4": 2, "features.5": 2, "features.6": 2, "features.7": 2,
                             "features.8": 2, "features.9": 2, "features.10": 2, "features.11": 2,
                             "features.12": 2, "avgpool": 2, "classifier.0": 2, "classifier.1": 2,
                             "classifier.2": 2, "classifier.3": 2, "classifier.4": 2, "classifier.5": 2,
-                            "classifier.6": 2})
+                            "classifier.6": 2, 'flatten': 2})
         cModel.clearMiddleResult()
         cModel(m.x)
         cModel.recover() # 恢复m的forward函数，避免sModel对同一个模型嵌套修改
         print(cModel.getMiddleResult())
 
-        sModel = pytorchtool.Surgery(m.model, 2)
+        sModel = pytorchtool.Surgery(m.model, 2, depth=m.depth)
         sModel.setLayerState({"input": 1, "features.0": 2, "features.1": 2, "features.2": 2, "features.3": 2,
                             "features.4": 2, "features.5": 2, "features.6": 2, "features.7": 2,
                             "features.8": 2, "features.9": 2, "features.10": 2, "features.11": 2,
                             "features.12": 2, "avgpool": 2, "classifier.0": 2, "classifier.1": 2,
                             "classifier.2": 2, "classifier.3": 2, "classifier.4": 2, "classifier.5": 2,
-                            "classifier.6": 2})
+                            "classifier.6": 2, 'flatten': 2})
         '''
         这里使用随机生成的相同size的数据代替原始输入数据，
         实际使用时若将计算全部卸载到了服务端，则需要传入原始数据

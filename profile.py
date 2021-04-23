@@ -31,7 +31,7 @@ class Profile(object):
         self.information = defaultdict(list)
 
         # 输入层信息（默认输入数据size为3*224*224，float32）
-        self.information["input"].extend([0, (3*224*224) * 4 / 1024 / 1024, 0])
+        self.information["input"].extend([0, (3*224*224) * 4 / 1024 / 1024, 0.01])
 
     def __enter__(self):
         if not self.enabled:
