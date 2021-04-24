@@ -11,7 +11,7 @@ from classes import class_names
 from PIL import Image
 from torchvision import models, transforms
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def process_img(path_img):
     # hard code
@@ -44,7 +44,7 @@ class model:
                                     init_weights=False)
             model.eval()
             self.model = model
-            self.depth = 1
+            self.depth = 2
         elif self.model_name in 'alexnet':
             self.model_name = 'alexnet'
             self.path = "./model_weight/alexnet/alexnet-owt-4df8aa71.pth"
@@ -58,7 +58,8 @@ class model:
 
         if self.use_gpu:
             self.model = self.model.to(0)
-            self.x = self.x.cuda()
+            # self.x = self.x.cuda()
+            self.x = self.x.to(0)
 
     def load_weight(self):
         state_dict_read = torch.load(self.path)
@@ -95,8 +96,9 @@ class model:
 
 if __name__ == "__main__":
     name = "in"
+    torch.randn(4).to(0)
     start_init = time.time()
-    m = model(name)
+    m = model(name, use_gpu=True)
     print("模型结构初始化时间: ", time.time() - start_init)
     start_load = time.time()
     m.load_weight()
