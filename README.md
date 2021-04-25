@@ -8,7 +8,7 @@ DNN_Partition辅助工具，用于对pytorch模型进行简单的性能分析
 
 **添加了示例（example.py classes.py）** *已验证*
 
-
+## 下载模型权重文件
 ```shell
 # AlexNet
 mkdir alexnet
