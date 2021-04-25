@@ -84,7 +84,6 @@ class model:
         with pytorchtool.Profile(self.model, use_cuda=self.use_gpu, 
                 depth=depth) as prof:
             self.model(self.x)
-            self.model(self.x)
 
         if not os.path.exists("./parameters/" + self.model_name):
             os.makedirs("./parameters/" + self.model_name)
@@ -96,10 +95,11 @@ class model:
 
 
 if __name__ == "__main__":
-    name = "in"
     torch.randn(4).to(0)
+
+    name = "in"
     start_init = time.time()
-    m = model(name, use_gpu=False)
+    m = model(name, use_gpu=True)
     print("模型结构初始化时间: ", time.time() - start_init)
     start_load = time.time()
     m.load_weight()
@@ -113,6 +113,7 @@ if __name__ == "__main__":
     if doPrepare:
         m.save_layers(depth=m.depth)
     elif doProf:
+        m.prof(depth=m.depth)
         m.prof(depth=m.depth)
     elif doInference:
         start = time.time()
