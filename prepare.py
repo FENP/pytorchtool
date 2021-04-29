@@ -15,6 +15,7 @@ def save_weight_by_layer(module, name="", depth=-1):
     '''
     if depth == 0 or len(child_list) == 0:
         torch.save(module.state_dict(), os.path.join(path, dir_name, name + ".pth"))
+        torch.save(module, os.path.join(path, dir_name, name + ".pkl"))
     else:
         for child in child_list:
             save_weight_by_layer(child[1], child[0] if name=="" else name + "." + child[0], depth - 1)

@@ -31,7 +31,7 @@ class Profile(object):
         self.information = defaultdict(list)
 
         # 输入层信息（默认输入数据size为3*224*224，float32）
-        self.information["input"].extend([0, (3*224*224) * 4 / 1024 / 1024, 0.01])
+        self.information["input"].extend([0, 0, (3*224*224) * 4 / 1024 / 1024, 0.01])
 
     def __enter__(self):
         if not self.enabled:
@@ -57,24 +57,30 @@ class Profile(object):
 
     def __str__(self):
         return str(pd.DataFrame.from_dict(self.information, orient='index', 
-            columns=['Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)']))
+            columns=['Parameters Loading Time(ms)', 'Model Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)']))
 
     def __call__(self, *args, **kwargs):
         return self._model(*args, **kwargs)
 
     def _load_weight(self, trace):
         (name, module) = trace
-        
+
         start = time.time()
         module.load_state_dict(torch.load("./model_weight/" + 
             self._model.__class__.__name__ + "/" + name + ".pth"), strict=False)
         loadingTime = (time.time() - start) * 1000
         self.information[name].append(loadingTime)
+
         return trace
 
     def _hook_trace(self, trace):
         (name, module) = trace
-        _forward = module.forward
+        start = time.time()
+        m = torch.load("./model_weight/" + 
+            self._model.__class__.__name__ + "/" + name + ".pkl")
+        loadingTime = (time.time() - start) * 1000
+        self.information[name].append(loadingTime)
+        _forward = m.forward
         self._forwards[name] = _forward
 
         @functools.wraps(_forward)
@@ -118,5 +124,5 @@ class Profile(object):
             filePath：csv文件路径及文件名
         """
         df = pd.DataFrame.from_dict(self.information, orient='index', 
-            columns=['Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)'])
+            columns=['Parameters Loading Time(ms)', 'Model Loading Time(ms)', 'Data Size(MB)','Execute Time(ms)'])
         df.to_csv(filePath)
