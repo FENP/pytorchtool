@@ -98,17 +98,19 @@ class model:
 if __name__ == "__main__":
     torch.randn(4).to(0)
 
-    name = "alex"
+    name = "al"
     start_init = time.time()
-    m = model(name, use_gpu=False)
+    m = model(name, use_gpu=True)
     print("模型结构初始化时间: ", time.time() - start_init)
     start_load = time.time()
     m.load_weight()
     print("模型参数加载时间: ", time.time() - start_load)
 
+    m.inference()
+
     doPrepare = False
     doProf = False
-    doInference = True
+    doInference = False
     doPartition = False
     doPartition2 = True
 
