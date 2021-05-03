@@ -5,7 +5,7 @@ from collections import defaultdict
 
 class Surgery2(object):
     """分层加载模型的处理模式"""
-    def __init__(self, name, dag_path):
+    def __init__(self, name, dag_path, is_debug = False):
         if name in 'inception':
             self.model_name = 'Inception3'
 
@@ -14,6 +14,8 @@ class Surgery2(object):
 
         else:
             raise RuntimeError("Wrong model name")
+
+        self._is_debug = is_debug
 
         self._edge = defaultdict(list)
         self._output = defaultdict(None)
@@ -33,6 +35,8 @@ class Surgery2(object):
     
     def loadLayer(self, layerName):
         if(self._layerModule[layerName] is None):
+            if self._is_debug:
+                logging.debug("初始化层: %s", layerName)
             # 加载该层
             self._layerModule[layerName] = torch.load("../pytorchtool/model_weight/" + 
                 self.model_name + "/" + layerName + ".pkl")
@@ -59,7 +63,7 @@ class Surgery2(object):
             layerInput = inputList[0]
         else:
             layerInput = inputList
-        
-        logging.debug("execute %s", layerName)
+        if self._is_debug:
+            logging.debug("execute %s", layerName)
         self._output[layerName] = self._layerModule[layerName](layerInput)
         return self._output[layerName]
