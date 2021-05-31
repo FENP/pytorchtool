@@ -53,6 +53,13 @@ class model:
             model.eval()
             self.model = model
             self.depth = -1 
+        elif self.model_name in 'resnet':
+            self.model_name = 'resnet'
+            self.path = './model_weight/resnet/resnet18-f37072fd.pth'
+            model = models.resnet18(False)
+            model.eval()
+            self.model = model
+            self.depth = 2
         else:
             print("Wrong model name")
 
@@ -88,7 +95,6 @@ class model:
 
         if not os.path.exists("./parameters/" + self.model_name):
             os.makedirs("./parameters/" + self.model_name)
-
         if self.use_gpu:
             prof.printCsv("./parameters/" + self.model_name + "/gpuPart.csv")
         else:
@@ -98,7 +104,7 @@ class model:
 if __name__ == "__main__":
     torch.randn(4).to(0)
 
-    name = "al"
+    name = "res"
     start_init = time.time()
     m = model(name, use_gpu=True)
     print("模型结构初始化时间: ", time.time() - start_init)
@@ -109,10 +115,10 @@ if __name__ == "__main__":
     m.inference()
 
     doPrepare = False
-    doProf = False
+    doProf = True
     doInference = False
     doPartition = False
-    doPartition2 = True
+    doPartition2 = False
 
     if doPrepare:
         m.save_layers(depth=m.depth)

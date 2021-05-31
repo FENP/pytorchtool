@@ -12,6 +12,9 @@ class Surgery2(object):
         elif name in 'alexnet':
             self.model_name = 'AlexNet'
 
+        elif name in 'resnet':
+            self.model_name = 'ResNet'
+
         else:
             raise RuntimeError("Wrong model name")
 

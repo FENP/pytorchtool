@@ -31,7 +31,7 @@ class Profile(object):
         self.information = defaultdict(list)
 
         # 输入层信息（默认输入数据size为3*224*224，float32）
-        self.information["input"].extend([0, 0, (3*224*224) * 4 / 1024 / 1024, 0.01])
+        self.information["input"].extend([0, 0, 0.15, 0.01])
 
     def __enter__(self):
         if not self.enabled:
@@ -75,16 +75,19 @@ class Profile(object):
 
     def _hook_trace(self, trace):
         (name, module) = trace
+        '''
         start = time.time()
         m = torch.load("./model_weight/" + 
             self._model.__class__.__name__ + "/" + name + ".pkl")
         loadingTime = (time.time() - start) * 1000
         self.information[name].append(loadingTime)
-        _forward = m.forward
+        '''
+        _forward = module.forward
         self._forwards[name] = _forward
 
         @functools.wraps(_forward)
         def wrap_forward(*args, **kwargs):
+            print(name)
             # 执行时间
             if self.use_cuda:
                 start = torch.cuda.Event(enable_timing=True)
